@@ -19,9 +19,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct HabbitLoopApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    @StateObject var auth = AuthViewModel()
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
+             .environmentObject(auth)
         }
     }
 }

@@ -7,15 +7,16 @@
 
 import SwiftUI
 import Firebase
-import FirebaseAuth
+//import FirebaseAuth
 
 struct ContentView: View {
+    @EnvironmentObject var auth: AuthViewModel
     
     @State var userName: String = ""
     @State var email: String = ""
     @State var password: String = ""
     
-    var auth = Auth.auth()
+    //var auth = Auth.auth()
     
     var body: some View {
         VStack {
@@ -30,28 +31,33 @@ struct ContentView: View {
                                 .frame(maxWidth: 300)
                                 .padding(.bottom)
             Button("Sign in "){
-                auth.signIn(withEmail: email, password: password){ reuslt, error in
-                    if let error = error {
-                        print("failed to sign in \(error.localizedDescription)")
-                    }
-                    
-                }
+                
+                auth.login(email: email, password: password)
                 
             }
             .padding(.bottom)
             Text("Don´t have an account yet?")
                 .padding(.bottom)
             Button("Sign up"){
-                auth.createUser(withEmail: email, password: password) { result , error in
-                    if let error = error {
-                        print("failed to create user: \(error.localizedDescription)")
-                    }
-                }
+                
+                auth.createUser(email: email, password: password)
+                
             }
                 
             
         }
         .padding()
+    }
+}
+struct RootView: View {
+    @EnvironmentObject var auth: AuthViewModel
+
+    var body: some View {
+        if auth.isLoggedIn {
+            HabbitView(habbitVm: HabbitViewModel())
+        } else {
+            ContentView()
+        }
     }
 }
 

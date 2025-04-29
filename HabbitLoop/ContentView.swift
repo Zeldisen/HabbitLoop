@@ -19,34 +19,49 @@ struct ContentView: View {
     //var auth = Auth.auth()
     
     var body: some View {
-        VStack {
-            TextField("User name", text: $userName)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .frame(maxWidth: 300)
-            TextField("Email", text: $email)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .frame(maxWidth: 300)
-            TextField("Password", text: $password)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .frame(maxWidth: 300)
-                                .padding(.bottom)
-            Button("Sign in "){
-                
-                auth.login(email: email, password: password)
-                
-            }
-            .padding(.bottom)
-            Text("Don´t have an account yet?")
-                .padding(.bottom)
-            Button("Sign up"){
-                
-                auth.createUser(email: email, password: password)
-                
-            }
-                
-            
+        ZStack{
+            Image("HabbitLoop-loggo")
+                .resizable()
+                .frame(width: 200, height: 100)
         }
-        .padding()
+        Spacer()
+            
+            VStack {
+                TextField("User name", text: $userName)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .frame(maxWidth: 300)
+                TextField("Email", text: $email)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .frame(maxWidth: 300)
+                TextField("Password", text: $password)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .frame(maxWidth: 300)
+                    .padding(.bottom)
+                Button("Sign in "){
+                    
+                    auth.login(email: email, password: password)
+                    
+                }
+                .foregroundColor(.white)
+                .bold()
+                .padding(.bottom)
+                
+                Text("Don´t have an account yet?")
+                    .padding(.bottom)
+                Button("Sign up"){
+                    
+                    auth.createUser(userName: userName, email: email, password: password)
+                    
+                }
+                .foregroundColor(.white)
+                .bold()
+                .padding()
+                
+                
+            }
+            .padding()
+            .background(Color.mint.opacity(0.5))
+            Spacer()
     }
 }
 struct RootView: View {
@@ -54,7 +69,7 @@ struct RootView: View {
 
     var body: some View {
         if auth.isLoggedIn {
-            HabbitView(habbitVm: HabbitViewModel())
+            HabbitView(habbitVm: HabbitViewModel(), authVm: auth)
         } else {
             ContentView()
         }

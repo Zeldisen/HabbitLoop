@@ -16,8 +16,8 @@ class HabbitViewModel: ObservableObject {
     let db = Firestore.firestore()
     
     func addHabbit(title: String) {
-        guard let currentUser = Auth.auth().currentUser?.uid else {return}
-        let newHabit = Habit(title: title, done: false, userId: currentUser)
+        guard let userId = Auth.auth().currentUser?.uid else {return}
+        let newHabit = Habit(title: title, done: false, userId: userId)
 
            do {
                try db.collection("habits").addDocument(from: newHabit)

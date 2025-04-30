@@ -66,10 +66,12 @@ struct ContentView: View {
 }
 struct RootView: View {
     @EnvironmentObject var auth: AuthViewModel
+    @StateObject var habbitVm = HabbitViewModel()
 
     var body: some View {
         if auth.isLoggedIn {
             HabbitView(habbitVm: HabbitViewModel(), authVm: auth)
+            
         } else {
             ContentView()
         }

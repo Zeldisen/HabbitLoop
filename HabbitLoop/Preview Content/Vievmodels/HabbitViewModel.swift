@@ -61,38 +61,24 @@ class HabbitViewModel: ObservableObject {
     func fetchHabits () {
         guard let userId = Auth.auth().currentUser?.uid else {
             print(" Ingen userId ännu")
-              print("User ID saknas, väntar 1 sekund...")
-              DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                  self.fetchHabits()
-              }
-              return
-          }
-          
-          db.collection("habits")
-              .whereField("userId", isEqualTo: userId)
-              .addSnapshotListener { snapshot, error in
-                  guard let documents = snapshot?.documents else {
-                      print(" Inga dokument hittade")
-                      return }
-                  self.habits = documents.compactMap { try? $0.data(as: Habit.self) }
-                  
-                  // felsökning vad som hämtas och vad som inte hämtas
-                 /* var fetchedHabits: [Habit] = []
-
-                  for doc in documents {
-                      do {
-                          let habit = try doc.data(as: Habit.self)
-                          print("Habit hämtad: \(habit.title)")
-                          fetchedHabits.append(habit)
-                      } catch {
-                          print("Kunde inte parsa habit: \(doc.documentID) – \(error)")
-                      }
-                  }
-
-                  self.habits = fetchedHabits*/
-              }
+            print("User ID saknas, väntar 1 sekund...")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                self.fetchHabits()
+            }
+            return
+        }
         
+        db.collection("habits")
+            .whereField("userId", isEqualTo: userId)
+            .addSnapshotListener { snapshot, error in
+                guard let documents = snapshot?.documents else {
+                    print(" Inga dokument hittade")
+                    return }
+                self.habits = documents.compactMap { try? $0.data(as: Habit.self) }
+                
+            }
     }
+    
     func countStreakdays(for habit: Habit){
         _ = Calendar.current
            let now = Date()
@@ -133,7 +119,6 @@ class HabbitViewModel: ObservableObject {
         db.collection("habits").document(habitId).updateData([
             "done": !habit.done
         
-            
         ]) { error in
             if let error = error {
                 print("Kunde inte uppdatera done-status: \(error.localizedDescription)")
@@ -146,6 +131,13 @@ class HabbitViewModel: ObservableObject {
             }
         }
     }
+    /**
+     Fucntion to get witch day it is for print to user in views
+     */
+    func habitsForToday() -> [Habit] {
+        let today = weekdayString(from: Date()) // t.ex. "Måndag"
+        return habits.filter { $0.scheduledDays.contains(today) }
+    }
     
     func habitsGroupedByWeekday() -> [String: [Habit]] {
         var groupedHabits: [String: [Habit]] = [:]
@@ -153,8 +145,8 @@ class HabbitViewModel: ObservableObject {
         formatter.dateFormat = "yyyy-MM-dd"
         
         let weekdayFormatter = DateFormatter()
-        weekdayFormatter.locale = Locale(identifier: "sv_SE") // Svenska veckodagar
-        weekdayFormatter.dateFormat = "EEEE" // Fullt veckodagsnamn (Måndag, Tisdag ...)
+        weekdayFormatter.locale = Locale(identifier: "en_EN") // Weekdays in swedish
+        weekdayFormatter.dateFormat = "EEEE" // full weekdayprint
         
         for habit in habits {
             if let lastUpdatedStr = habit.lastUpdated,

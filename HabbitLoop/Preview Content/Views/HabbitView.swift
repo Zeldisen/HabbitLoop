@@ -38,6 +38,8 @@ struct HabbitView: View {
               Button("Add Habit") {
                   showAddHabit = true
               }
+              .bold()
+              .foregroundColor(.mint)
               Spacer()
               .sheet(isPresented: $showAddHabit) {
                   AddHabitView(habbitVm: habbitVm, authVm: authVm)
@@ -50,7 +52,7 @@ struct HabbitView: View {
             case .weekly:
                 WeeklyView(habbitVm: habbitVm)
             case .monthly:
-                MonthlyView()
+                MonthlyView(habitVm: habbitVm)
             }
             Spacer()
                 .toolbar{

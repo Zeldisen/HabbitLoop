@@ -14,13 +14,15 @@ struct WeeklyView: View {
 
     
     var body: some View {
-      
+        
+
         let groupedHabits = habbitVm.habitsGroupedByWeekday()
         
         VStack{
     
             List {
                 ForEach(daysOrder, id: \.self) { day in
+
                     Section(header: Text(day).font(.headline)) {
                         let habitsForDay = habbitVm.habits.filter { $0.scheduledDays.contains(day) }
                         ForEach(habitsForDay) { habit in
@@ -51,6 +53,7 @@ struct WeeklyView: View {
                             
                         }
                     }
+
                 }
             }
         }.onAppear {
@@ -63,3 +66,5 @@ struct WeeklyView: View {
     WeeklyView(habbitVm: HabbitViewModel())
 }
 */
+
+

@@ -29,6 +29,7 @@ struct DailyView: View {
                
                 List {
                 
+
                     ForEach(todayHabits) { habit in
                         HabitRow(
                               habit: habit,
@@ -36,6 +37,8 @@ struct DailyView: View {
                               habitVm: habbitVm
                           )
                                        }
+
+ 
                 }
                 .scrollContentBackground(.hidden) // hides default color
                 .background(Color.mint.opacity(0.5))
@@ -46,6 +49,7 @@ struct DailyView: View {
         }
         }
     }
+
 struct HabitRow: View {
     var habit: Habit
     var day: String
@@ -88,6 +92,7 @@ struct HabitRow: View {
         .listRowBackground(Color.clear)
     }
 }
+
 
 /*#Preview {
     DailyView()

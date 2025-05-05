@@ -15,6 +15,7 @@ class HabbitViewModel: ObservableObject {
     
     let db = Firestore.firestore()
     
+
      var doneDates: [Date] {
          let formatter = DateFormatter()
          formatter.dateFormat = "yyyy-MM-dd"
@@ -28,6 +29,7 @@ class HabbitViewModel: ObservableObject {
          }
      }
     
+
     func addHabbit(title: String,scheduledDays: [String]) {
         guard let userId = Auth.auth().currentUser?.uid else {return}
         let newHabit = Habit(
@@ -52,6 +54,7 @@ class HabbitViewModel: ObservableObject {
         formatter.dateFormat = "EEEE"
         return formatter.string(from: date).capitalized // Ex: "Måndag"
     }
+
  /**
   Function that deletets one habit from a weekday, not deletes from all weekdays, but if you have a habbit in sundays and look in monthlyView you can see that it removes from all sundays, but not in other weedays.
   */
@@ -121,6 +124,27 @@ class HabbitViewModel: ObservableObject {
         return habit.doneDates?.contains(targetDate) ?? false
     }
     
+
+    
+    func deleteHabit(at offsets: IndexSet) {
+        
+      
+        for index in offsets {
+                let habit = habits[index]
+                guard let habitId = habit.id else { continue }
+                
+            db.collection("habits").document(habitId).delete { error in
+                if let error = error {
+                    print(" Kunde inte ta bort habit: \(error.localizedDescription)")
+                } else {
+                    print(" Habit borttagen")
+                }
+            }
+            }
+        
+        
+    }
+
     func fetchHabits () {
         guard let userId = Auth.auth().currentUser?.uid else {
             print(" Ingen userId ännu")
@@ -178,7 +202,7 @@ class HabbitViewModel: ObservableObject {
     
     func toggleDone(for habit: Habit) {
         guard let habitId = habit.id else { return }
-
+      
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         let today = formatter.string(from: Date())
@@ -200,6 +224,21 @@ class HabbitViewModel: ObservableObject {
                 print("Done-datum uppdaterat")
                 self.fetchHabits()
                 self.countStreakdays(for: habit)
+
+        let newDoneStatus = !habit.done
+        db.collection("habits").document(habitId).updateData([
+            "done": !habit.done
+        
+        ]) { error in
+            if let error = error {
+                print("Kunde inte uppdatera done-status: \(error.localizedDescription)")
+            } else {
+                print("Done-status uppdaterad")
+                
+                if newDoneStatus == true {
+                               self.countStreakdays(for: habit)
+                           }
+
             }
         }
     }

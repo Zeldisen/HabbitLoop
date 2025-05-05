@@ -29,28 +29,13 @@ struct DailyView: View {
                
                 List {
                 
-                    ForEach (todayHabits)  { habit in
-                        HStack{
-                            Text(habit.title)
-                            Spacer()
-                            Text("streak: \(habit.days)")
-                            
-                            Spacer()
-                            Button(action: {
-                                habbitVm.toggleDone(for: habit)
-                            }) {
-                                Image(systemName: habit.done ? "checkmark.circle.fill" : "circle")
-                            }
-                        }
-                        .padding() // givs space i the row
-                        .background(Color.white) // color inside "item"
-                        .cornerRadius(10)
-                        .shadow(radius: 1)
-                        .listRowInsets(EdgeInsets()) // takes away default settings
-                        .padding(.vertical, 4) // gets space between rows
-                        .listRowBackground(Color.clear)
-                        
-                    }.onDelete(perform: habbitVm.deleteHabit)
+                    ForEach(todayHabits) { habit in
+                        HabitRow(
+                              habit: habit,
+                              day: today,                
+                              habitVm: habbitVm
+                          )
+                                       }
                 }
                 .scrollContentBackground(.hidden) // hides default color
                 .background(Color.mint.opacity(0.5))
@@ -61,7 +46,48 @@ struct DailyView: View {
         }
         }
     }
+struct HabitRow: View {
+    var habit: Habit
+    var day: String
+    @ObservedObject var habitVm: HabbitViewModel
 
+    var body: some View {
+        let isDoneToday = habitVm.isHabitDone(for: Date(), habit: habit)
+        HStack {
+            Text(habit.title)
+            Spacer()
+            Text("streak: \(habit.days)")
+            Spacer()
+            Button(action: {
+                habitVm.toggleDone(for: habit)
+            }) {
+                Image(systemName: isDoneToday ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(.mint)
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button {
+                habitVm.deleteHabit(habit, day: day)
+            } label: {
+                Label("Only This Day", systemImage: "calendar.badge.minus")
+            }
+            .tint(.orange)
+            
+            Button(role: .destructive) {
+                habitVm.deleteHabit(habit)
+            } label: {
+                Label("Delete All", systemImage: "trash")
+            }
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(10)
+        .shadow(radius: 1)
+        .listRowInsets(EdgeInsets())
+        .padding(.vertical, 4)
+        .listRowBackground(Color.clear)
+    }
+}
 
 /*#Preview {
     DailyView()

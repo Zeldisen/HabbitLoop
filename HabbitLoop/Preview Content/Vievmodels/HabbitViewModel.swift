@@ -15,6 +15,19 @@ class HabbitViewModel: ObservableObject {
     
     let db = Firestore.firestore()
     
+     var doneDates: [Date] {
+         let formatter = DateFormatter()
+         formatter.dateFormat = "yyyy-MM-dd"
+         
+         return habits.compactMap { habit in
+             if habit.done, let lastUpdated = habit.lastUpdated {
+                
+                 return formatter.date(from: lastUpdated)
+             }
+             return nil
+         }
+     }
+    
     func addHabbit(title: String,scheduledDays: [String]) {
         guard let userId = Auth.auth().currentUser?.uid else {return}
         let newHabit = Habit(
@@ -39,25 +52,75 @@ class HabbitViewModel: ObservableObject {
         formatter.dateFormat = "EEEE"
         return formatter.string(from: date).capitalized // Ex: "Måndag"
     }
-    
-    func deleteHabit(at offsets: IndexSet) {
-        
-      
-        for index in offsets {
-                let habit = habits[index]
-                guard let habitId = habit.id else { continue }
-                
-            db.collection("habits").document(habitId).delete { error in
-                if let error = error {
-                    print(" Kunde inte ta bort habit: \(error.localizedDescription)")
-                } else {
-                    print(" Habit borttagen")
-                }
+ /**
+  Function that deletets one habit from a weekday, not deletes from all weekdays, but if you have a habbit in sundays and look in monthlyView you can see that it removes from all sundays, but not in other weedays.
+  */
+    func deleteHabit(_ habit: Habit) {
+        guard let habitId = habit.id else { return }
+
+        db.collection("habits").document(habitId).delete { error in
+            if let error = error {
+                print("Failed to remove habit: \(error.localizedDescription)")
+            } else {
+                print("Habit removed")
             }
-            }
-        
-        
+        }
     }
+    /**
+     Function removes all habits from list in all weekdays, not all habits, but that specific habit.
+     Gives User a choise to remove all or just from that day.
+     */
+    func deleteHabit(_ habit: Habit, day: String) {
+        guard let habitId = habit.id else { return }
+
+        // If habit is Scheduled one day, remove habit
+        if habit.scheduledDays.count == 1 {
+            deleteHabitById(habitId)
+            return
+        }
+
+        // Else just remove for that day
+        let updatedDays = habit.scheduledDays.filter { $0 != day }
+
+        db.collection("habits").document(habitId).updateData([
+            "scheduledDays": updatedDays
+        ]) { error in
+            if let error = error {
+                print("Failed to delete day from habit: \(error.localizedDescription)")
+            } else {
+                print("deleted habit on \(day) from habit:\(habit.title)")
+            }
+        }
+    }
+    
+    private func deleteHabitById(_ habitId: String) {
+        db.collection("habits").document(habitId).delete { error in
+            if let error = error {
+                print("Failed to delete habit: \(error.localizedDescription)")
+            } else {
+                print("Habit deleted")
+            }
+        }
+    }
+    
+    func getDaysInMonth(for date: Date) -> [Date] {
+        let calendar = Calendar.current
+        let range = calendar.range(of: .day, in: .month, for: date)!
+        let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: date))!
+        
+        return range.compactMap { day -> Date? in
+            calendar.date(byAdding: .day, value: day - 1, to: startOfMonth)
+        }
+    }
+    
+    // Mark if a day have a habit
+    func isHabitDone(for date: Date, habit: Habit) -> Bool {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let targetDate = formatter.string(from: date)
+        return habit.doneDates?.contains(targetDate) ?? false
+    }
+    
     func fetchHabits () {
         guard let userId = Auth.auth().currentUser?.uid else {
             print(" Ingen userId ännu")
@@ -115,19 +178,28 @@ class HabbitViewModel: ObservableObject {
     
     func toggleDone(for habit: Habit) {
         guard let habitId = habit.id else { return }
-        let newDoneStatus = !habit.done
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let today = formatter.string(from: Date())
+
+        var updatedDates = habit.doneDates ?? []
+
+        if updatedDates.contains(today) {
+            updatedDates.removeAll { $0 == today }
+        } else {
+            updatedDates.append(today)
+        }
+
         db.collection("habits").document(habitId).updateData([
-            "done": !habit.done
-        
+            "doneDates": updatedDates
         ]) { error in
             if let error = error {
-                print("Kunde inte uppdatera done-status: \(error.localizedDescription)")
+                print("Kunde inte uppdatera done-datum: \(error.localizedDescription)")
             } else {
-                print("Done-status uppdaterad")
-                
-                if newDoneStatus == true {
-                               self.countStreakdays(for: habit)
-                           }
+                print("Done-datum uppdaterat")
+                self.fetchHabits()
+                self.countStreakdays(for: habit)
             }
         }
     }

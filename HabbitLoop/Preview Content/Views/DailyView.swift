@@ -1,10 +1,3 @@
-//
-//  DailyView.swift
-//  HabbitLoop
-//
-//  Created by Jeanette Norberg on 2025-04-30.
-//
-
 import SwiftUI
 
 struct DailyView: View {
@@ -12,51 +5,48 @@ struct DailyView: View {
     
     var body: some View {
         
-        let todayHabits = habbitVm.habitsForToday() // findes habits user choosed for the day
-        let today = habbitVm.weekdayString(from: Date()) // finds today so I can print it for user
+       let todayHabits = habbitVm.habitsForToday()
+        let today = habbitVm.weekdayString(from: Date())
                
-        VStack{
-            HStack{
+        VStack {
+            HStack {
                 Text("Daily goals for:")
                     .font(.title)
                 Text(today)
                     .font(.title)
                     .padding()
             }
-            if todayHabits .isEmpty{
-                Text("You hav no habits for today")
-            }else{
-               
+            
+            if todayHabits.isEmpty {
+                Text("You have no habits for today")
+            } else {
                 List {
-                
-
                     ForEach(todayHabits) { habit in
                         HabitRow(
-                              habit: habit,
-                              day: today,                
-                              habitVm: habbitVm
-                          )
-                                       }
-
- 
+                            habit: habit,
+                            day: today,
+                            habitVm: habbitVm // skickas som let
+                        )
+                    }
                 }
-                .scrollContentBackground(.hidden) // hides default color
+                .scrollContentBackground(.hidden)
                 .background(Color.mint.opacity(0.5))
             }
-            
-        }.onAppear {
+        }
+        .onAppear {
             habbitVm.fetchHabits()
         }
-        }
     }
+}
 
 struct HabitRow: View {
     var habit: Habit
     var day: String
-    @ObservedObject var habitVm: HabbitViewModel
+    let habitVm: HabbitViewModel
 
     var body: some View {
         let isDoneToday = habitVm.isHabitDone(for: Date(), habit: habit)
+        
         HStack {
             Text(habit.title)
             Spacer()
@@ -92,8 +82,3 @@ struct HabitRow: View {
         .listRowBackground(Color.clear)
     }
 }
-
-
-/*#Preview {
-    DailyView()
-}*/

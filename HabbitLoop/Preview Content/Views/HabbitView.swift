@@ -16,7 +16,7 @@ struct HabbitView: View {
     @State var habbit: String = ""
     @State var selectedDays: [String] = []
     
-    let allDays = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"]
+   // let allDays = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"]
     
     enum ViewMode {
         case daily, weekly, monthly

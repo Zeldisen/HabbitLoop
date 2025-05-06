@@ -8,42 +8,53 @@
 import SwiftUI
 
 struct WeeklyView: View {
-    
     @ObservedObject var habbitVm: HabbitViewModel
     let daysOrder = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"]
-    
+
     var body: some View {
-        
-        let groupedHabits = habbitVm.habitsGroupedByWeekday()
-        
-        VStack{
-    
+        NavigationView {
             List {
                 ForEach(daysOrder, id: \.self) { day in
-                    Text(day)
-                        .font(.headline)
-                        .padding(.top)
+                    Section(header: Text(day).font(.headline)) {
+                        let habitsForDay = habbitVm.habits.filter { $0.scheduledDays.contains(day) }
+                        if habitsForDay.isEmpty {
+                            Text("Inga vanor planerade.")
+                                .foregroundColor(.gray)
+                        } else {
+                            ForEach(habitsForDay) { habit in
+                                HStack {
+                                    Text("• \(habit.title)")
+                                    Spacer()
+                                    Button(action: {
+                                        habbitVm.toggleDone(for: habit)
+                                    }) {
+                                        Image(systemName: habit.done ? "checkmark.circle.fill" : "circle")
+                                            .foregroundColor(.mint)
+                                    }
+                                }
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                    Button {
+                                        habbitVm.deleteHabit(habit, day: day)
+                                    } label: {
+                                        Label("Endast denna dag", systemImage: "calendar.badge.minus")
+                                    }
+                                    .tint(.orange)
 
-                    ForEach(habbitVm.habits.filter { $0.scheduledDays.contains(day) }) { habit in
-                        HStack{
-                            Text("• \(habit.title)")
-                                .padding(.leading)
-                            Spacer()
-                            Button(action: {
-                                habbitVm.toggleDone(for: habit)
-                            }) {
-                                Image(systemName: habit.done ? "checkmark.circle.fill" : "circle")
+                                    Button(role: .destructive) {
+                                        habbitVm.deleteHabit(habit)
+                                    } label: {
+                                        Label("Ta bort helt", systemImage: "trash")
+                                    }
+                                }
                             }
                         }
-                    }.onDelete(perform: habbitVm.deleteHabit)
+                    }
                 }
             }
-        }.onAppear {
+            .navigationTitle("Veckoöversikt")
+        }
+        .onAppear {
             habbitVm.fetchHabits()
         }
     }
-}
-
-#Preview {
-    WeeklyView(habbitVm: HabbitViewModel())
 }

@@ -1,10 +1,3 @@
-//
-//  DailyView.swift
-//  HabbitLoop
-//
-//  Created by Jeanette Norberg on 2025-04-30.
-//
-
 import SwiftUI
 
 struct DailyView: View {
@@ -12,57 +5,80 @@ struct DailyView: View {
     
     var body: some View {
         
-        let todayHabits = habbitVm.habitsForToday() // findes habits user choosed for the day
-        let today = habbitVm.weekdayString(from: Date()) // finds today so I can print it for user
+       let todayHabits = habbitVm.habitsForToday()
+        let today = habbitVm.weekdayString(from: Date())
                
-        VStack{
-            HStack{
+        VStack {
+            HStack {
                 Text("Daily goals for:")
                     .font(.title)
                 Text(today)
                     .font(.title)
                     .padding()
             }
-            if todayHabits .isEmpty{
-                Text("You hav no habits for today")
-            }else{
-               
+            
+            if todayHabits.isEmpty {
+                Text("You have no habits for today")
+            } else {
                 List {
-                
-                    ForEach (todayHabits)  { habit in
-                        HStack{
-                            Text(habit.title)
-                            Spacer()
-                            Text("streak: \(habit.days)")
-                            
-                            Spacer()
-                            Button(action: {
-                                habbitVm.toggleDone(for: habit)
-                            }) {
-                                Image(systemName: habit.done ? "checkmark.circle.fill" : "circle")
-                            }
-                        }
-                        .padding() // givs space i the row
-                        .background(Color.white) // color inside "item"
-                        .cornerRadius(10)
-                        .shadow(radius: 1)
-                        .listRowInsets(EdgeInsets()) // takes away default settings
-                        .padding(.vertical, 4) // gets space between rows
-                        .listRowBackground(Color.clear)
-                        
-                    }.onDelete(perform: habbitVm.deleteHabit)
+                    ForEach(todayHabits) { habit in
+                        HabitRow(
+                            habit: habit,
+                            day: today,
+                            habitVm: habbitVm // skickas som let
+                        )
+                    }
                 }
-                .scrollContentBackground(.hidden) // hides default color
+                .scrollContentBackground(.hidden)
                 .background(Color.mint.opacity(0.5))
             }
-            
-        }.onAppear {
+        }
+        .onAppear {
             habbitVm.fetchHabits()
         }
-        }
     }
+}
 
+struct HabitRow: View {
+    var habit: Habit
+    var day: String
+    let habitVm: HabbitViewModel
 
-/*#Preview {
-    DailyView()
-}*/
+    var body: some View {
+        let isDoneToday = habitVm.isHabitDone(for: Date(), habit: habit)
+        
+        HStack {
+            Text(habit.title)
+            Spacer()
+            Text("streak: \(habit.days)")
+            Spacer()
+            Button(action: {
+                habitVm.toggleDone(for: habit)
+            }) {
+                Image(systemName: isDoneToday ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(.mint)
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button {
+                habitVm.deleteHabit(habit, day: day)
+            } label: {
+                Label("Only This Day", systemImage: "calendar.badge.minus")
+            }
+            .tint(.orange)
+            
+            Button(role: .destructive) {
+                habitVm.deleteHabit(habit)
+            } label: {
+                Label("Delete All", systemImage: "trash")
+            }
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(10)
+        .shadow(radius: 1)
+        .listRowInsets(EdgeInsets())
+        .padding(.vertical, 4)
+        .listRowBackground(Color.clear)
+    }
+}

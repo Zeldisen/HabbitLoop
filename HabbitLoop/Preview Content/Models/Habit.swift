@@ -17,5 +17,7 @@ struct Habit: Identifiable , Codable {
        var days: Int
        var lastUpdated: String?
        var scheduledDays: [String]
+       var doneDates: [String]? 
+
     
 }

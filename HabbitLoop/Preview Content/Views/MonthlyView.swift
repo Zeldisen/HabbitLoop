@@ -1,14 +1,14 @@
 import SwiftUI
 
 struct MonthlyView: View {
+    
     @ObservedObject var habitVm: HabbitViewModel
-
     @State private var currentMonth: Date = Date()
     @State private var selectedDate: Date?
 
     var body: some View {
         VStack {
-            // MARK: - Month Selector
+            // Shows Month and give user possibility to switch month
             HStack {
                 Button(action: {
                     currentMonth = Calendar.current.date(byAdding: .month, value: -1, to: currentMonth)!
@@ -31,7 +31,8 @@ struct MonthlyView: View {
             }
             .padding()
 
-            // MARK: - Calendar Grid
+            // CalenderView, if there ar a dot i a day it`s at least one habit on that day.
+            // if user presses on that day a list will apear on the habits that day.
             let daysInMonth = habitVm.getDaysInMonth(for: currentMonth)
             let columns: [GridItem] = Array(repeating: .init(.flexible()), count: 7)
 
@@ -43,10 +44,8 @@ struct MonthlyView: View {
                         VStack {
                             Text("\(Calendar.current.component(.day, from: day))")
                                 .frame(width: 30, height: 30)
-                                //.background(habitVm.isHabitDone(for: day, habit: habit) ? Color.green : Color.clear)
                                 .clipShape(Circle())
-                               // .foregroundColor(habitVm.isHabitDone(for: day, habit: habit) ? .white : .black)
-
+                  
                             if hasScheduledHabit(on: day) {
                                 Circle()
                                     .fill(Color.mint)
@@ -60,11 +59,11 @@ struct MonthlyView: View {
             }
             .padding()
 
-            // MARK: - Selected Day Habit List
+           // Selected day List of Habit and gives user oppertunity to delete och press done/unDone
             if let selectedDate = selectedDate {
                 let weekday = habitVm.weekdayString(from: selectedDate)
                 let habitsForDay = habitVm.habits.filter { $0.scheduledDays.contains(weekday) }
-
+             
                 VStack(alignment: .leading) {
                     Text("Habits for: \(weekday):")
                         .font(.headline)
@@ -77,13 +76,14 @@ struct MonthlyView: View {
                     } else {
                         List {
                             ForEach(habitsForDay) { habit in
+                                let isDone = habitVm.isHabitDone(for: selectedDate, habit: habit)
                                 HStack {
                                     Text(habit.title)
                                     Spacer()
                                     Button(action: {
-                                        habitVm.toggleDone(for: habit)
+                                        habitVm.toggleDone(for: habit, on: selectedDate)
                                     }) {
-                                        Image(systemName: habit.done ? "checkmark.circle.fill" : "circle")
+                                        Image(systemName: isDone ? "checkmark.circle.fill" : "circle")
                                             .foregroundColor(.mint)
                                     }
                                 }
@@ -112,7 +112,7 @@ struct MonthlyView: View {
         }
     }
 
-    // MARK: - Helper Methods
+    
     func hasScheduledHabit(on date: Date) -> Bool {
         let weekday = habitVm.weekdayString(from: date)
         return habitVm.habits.contains { $0.scheduledDays.contains(weekday) }
@@ -124,4 +124,6 @@ struct MonthlyView: View {
         formatter.locale = Locale(identifier: "sv_SE")
         return formatter
     }
+    
+    
 }

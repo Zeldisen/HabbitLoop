@@ -7,7 +7,7 @@
 
 import SwiftUI
 import Firebase
-//import FirebaseAuth
+
 
 struct ContentView: View {
     @EnvironmentObject var auth: AuthViewModel
@@ -16,11 +16,10 @@ struct ContentView: View {
     @State var email: String = ""
     @State var password: String = ""
     
-    //var auth = Auth.auth()
-    
     var body: some View {
+       
         ZStack{
-            Image("HabbitLoop-loggo")
+            Image("Habit-Loop")
                 .resizable()
                 .frame(width: 200, height: 100)
         }
@@ -74,11 +73,11 @@ struct ContentView: View {
 }
 struct RootView: View {
     @EnvironmentObject var auth: AuthViewModel
-    @StateObject var habbitVm = HabbitViewModel()
+    @StateObject var habbitVm = HabitViewModel()
 
     var body: some View {
         if auth.isLoggedIn {
-            HabbitView(habbitVm: HabbitViewModel(), authVm: auth)
+            HabitView(habbitVm: HabitViewModel(), authVm: auth)
             
         } else {
             ContentView()

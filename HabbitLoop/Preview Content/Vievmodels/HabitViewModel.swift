@@ -10,7 +10,8 @@ import FirebaseFirestore
 import FirebaseAuth
 import UserNotifications
 
-class HabbitViewModel: ObservableObject {
+class HabitViewModel: ObservableObject {
+    
     
     @Published var habits: [Habit] = []
     @Published var trophys = Trophys()
@@ -20,6 +21,7 @@ class HabbitViewModel: ObservableObject {
     init() {
         fetchHabits()
         loadTrophiesFromFirestore()
+        
     }
     
     /**
@@ -144,8 +146,10 @@ class HabbitViewModel: ObservableObject {
     }
     
     func fetchHabits () {
-        guard let userId = Auth.auth().currentUser?.uid else {
-            print(" No userId yet")
+  
+   guard let userId = Auth.auth().currentUser?.uid else {
+        
+        print(" No userId yet")
             print("User ID missed, waiting 1 second...")
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 self.fetchHabits()

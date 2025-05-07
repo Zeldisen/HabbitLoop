@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct DailyView: View {
-    @ObservedObject var habbitVm: HabbitViewModel
+    @ObservedObject var habbitVm: HabitViewModel
     
     var body: some View {
         
@@ -11,10 +11,10 @@ struct DailyView: View {
                
         VStack {
             HStack {
-                Text("Daily goals for:")
-                    .font(.title)
+               // Text("Goals for:")
+              //      .font(.title2)
                 Text(weekdayName)
-                    .font(.title)
+                    .font(.title2)
                     .padding()
             }
             
@@ -41,7 +41,7 @@ struct DailyView: View {
 
 struct HabitRow: View {
     var habit: Habit
-    let habitVm: HabbitViewModel
+    let habitVm: HabitViewModel
     
     var body: some View {
     

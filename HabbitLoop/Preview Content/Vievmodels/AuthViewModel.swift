@@ -10,7 +10,7 @@ import FirebaseFirestore
 import FirebaseAuth
 
 class AuthViewModel: ObservableObject {
-    
+   
     @Published var isLoggedIn = false
     @Published var userName: String = ""
     
@@ -25,11 +25,22 @@ class AuthViewModel: ObservableObject {
             }
         }
     }
+   
+    func signOut() {
+        do {
+            try Auth.auth().signOut()
+            print("User is signed out")
+            self.isLoggedIn = false
+            
+        } catch {
+            print("failed to sign out: \(error.localizedDescription)")
+        }
+    }
     
     func fetchUserData() {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         let db = Firestore.firestore()
-
+        
         db.collection("users").document(uid).getDocument { snapshot, error in
             if let data = snapshot?.data(), let name = data["userName"] as? String {
                 DispatchQueue.main.async {
@@ -60,6 +71,50 @@ class AuthViewModel: ObservableObject {
                 }
             } else {
                 print("Auth error: \(error?.localizedDescription ?? "Unknown error")")
+            }
+        }
+    }
+    func deleteAccount(completion: @escaping (Result<Void, Error>) -> Void){
+        guard let user = Auth.auth().currentUser else {
+               completion(.failure(NSError(domain: "Ingen användare inloggad", code: 0)))
+               return
+           }
+        
+        let db = Firestore.firestore()
+        let uid = user.uid
+        
+        // Remove users data
+        let userCollections = ["habits", "trophies", "users"]
+        
+        let group = DispatchGroup()
+        var deletionError: Error? = nil
+        
+        for collection in userCollections {
+            group.enter()
+            db.collection(collection).whereField("userId", isEqualTo: uid).getDocuments { snapshot, error in
+                if let error = error {
+                    deletionError = error
+                    group.leave()
+                    return
+                }
+                
+                snapshot?.documents.forEach { document in
+                    db.collection(collection).document(document.documentID).delete()
+                }
+                group.leave()
+            }
+            group.notify(queue: .main) {
+                if let error = deletionError {
+                    completion(.failure(error))
+                } else {
+                    user.delete { error in
+                        if let error = error {
+                            completion(.failure(error))
+                        } else {
+                            completion(.success(()))
+                        }
+                    }
+                }
             }
         }
     }

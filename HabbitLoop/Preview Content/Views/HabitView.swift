@@ -8,15 +8,13 @@
 import SwiftUI
 
 
-struct HabbitView: View {
+struct HabitView: View {
     
-    @ObservedObject var habbitVm: HabbitViewModel
+    @ObservedObject var habbitVm: HabitViewModel
     @ObservedObject var authVm: AuthViewModel
     
     @State var habbit: String = ""
     @State var selectedDays: [String] = []
-    
-   // let allDays = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"]
     
     enum ViewMode {
         case daily, weekly, monthly
@@ -24,25 +22,70 @@ struct HabbitView: View {
     
     @State private var currentView: ViewMode = .daily
     @State private var showAddHabit = false
+    @State private var showTrophies = false
+    
+    @State private var showDeleteAlert = false
+    @State private var deleteErrorMessage: String? = nil
     
     var body: some View {
         
         VStack {
-              Image("HabbitLoop-loggo")
+              Image("Habit-Loop")
                   .resizable()
                   .frame(width: 200, height: 100)
               Text("Welcome \(authVm.userName)!")
                   .font(.title)
                   .padding(.bottom)
-              
-              Button("Add Habit") {
-                  showAddHabit = true
-              }
-              .bold()
-              .foregroundColor(.mint)
-              Spacer()
+            HStack{
+                Button {
+                    showDeleteAlert = true
+                } label: { Label("", systemImage: "trash.fill")
+                }
+                    .font(.title)
+                    .foregroundColor(.mint)
+                    .padding(.horizontal)
+                    .alert("Are you sure you want to delete your account?", isPresented: $showDeleteAlert) {
+                        Button("Delete", role: .destructive) {
+                            authVm.deleteAccount { result in
+                                switch result {
+                                case .success:
+                                    authVm.signOut()
+                                    print("Account deleted")
+                                    // user logs out
+                                case .failure(let error):
+                                    deleteErrorMessage = error.localizedDescription
+                                }
+                            }
+                        }
+                        Button("Abort", role: .cancel) { }
+                    } message: {
+                        Text("Can´t regret this. Al data will be lost.")
+                    }
+                Button {
+                    showTrophies = true
+                } label: {
+                    Label("", systemImage: "trophy.fill")
+                }
+                .font(.title)
+                .foregroundColor(.mint)
+                .padding(.horizontal)
+                
+                Button {
+                    showAddHabit = true
+                } label: {
+                    Label("", systemImage: "plus.circle.fill")
+                }
+                .font(.title)
+                .foregroundColor(.mint)
+                .padding(.horizontal)
+            }
+            }
+             
               .sheet(isPresented: $showAddHabit) {
                   AddHabitView(habbitVm: habbitVm, authVm: authVm)
+              }
+              .sheet(isPresented: $showTrophies){
+                  TrophyView(habbitVm: habbitVm)
               }
 
           
@@ -86,7 +129,7 @@ struct HabbitView: View {
             
         }
     }
-}
+
 
 /*#Preview {
     HabbitView()

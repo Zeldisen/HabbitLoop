@@ -51,8 +51,11 @@ struct HabitRow: View {
         HStack {
             Text(habit.title)
             Spacer()
-            Text("streak: \(habit.days)")
-            Spacer()
+            if isDone {
+                Text(" ⭐️ : \(habit.days) days")
+               
+            }
+          
             Button(action: {
                 habitVm.toggleDone(for: habit, on: today)
             }) {

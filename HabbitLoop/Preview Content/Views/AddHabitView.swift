@@ -15,10 +15,17 @@ struct AddHabitView: View {
     
     @State var habbit: String = ""
     @State var selectedDays: [String] = []
+    @State private var notify = false    // for reminder
+    @State private var reminderTime = Date() // for reminder
     
+    
+    var timeFormatter: DateFormatter {  // for reminder
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter
+    }
     let allDays = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"]
-    
-    
+ 
     var body: some View {
         VStack{
             Image("HabbitLoop-loggo")
@@ -27,11 +34,20 @@ struct AddHabitView: View {
             Text("Welcome \(authVm.userName)!" )
                 .font(.title)
                 .padding(.bottom)
+            
+            Form {
+                TextField("Habit-titel", text: $habbit)
+                
+                Toggle("Reminde me ", isOn: $notify)
+                
+                if notify {
+                    DatePicker("Time", selection: $reminderTime, displayedComponents: .hourAndMinute)
+                }
+            }
+
         }
         VStack {
-            Text("Choose days for your habit:")
-                .bold()
-            Spacer()
+       
             List{
                 ForEach(allDays, id: \.self) { day in
                     Button(action: {
@@ -54,14 +70,23 @@ struct AddHabitView: View {
             }
         }
         VStack{
-            Text("Please add Category of your Habbit!")
-                .padding()
+           
             TextField("Your Habbit", text: $habbit)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding(.horizontal)
             
             Button("Save"){
-                habbitVm.addHabbit(title: habbit, scheduledDays: selectedDays)
+                let formattedTime = timeFormatter.string(from: reminderTime)
+                   habbitVm.addHabbit(
+                       title: habbit,
+                       scheduledDays: selectedDays,
+                       notify: notify,
+                       reminderTime: notify ? formattedTime : nil
+                   )
+                if notify {
+                    habbitVm.scheduleNotification(title: habbit, time: reminderTime, weekdays: selectedDays)
+                   }
+              
                 habbit = ""
                 selectedDays = []
             }

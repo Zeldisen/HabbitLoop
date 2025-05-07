@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct WeeklyView: View {
-    @ObservedObject var habbitVm: HabbitViewModel
+    @ObservedObject var habbitVm: HabitViewModel
     let daysOrder = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"]
     
     var body: some View {
@@ -36,7 +36,7 @@ struct WeeklyHabitRow: View {
     
     var day: String
     
-    @ObservedObject var habbitVm: HabbitViewModel
+    @ObservedObject var habbitVm: HabitViewModel
     
     var body: some View {
         

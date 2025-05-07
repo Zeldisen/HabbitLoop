@@ -26,7 +26,7 @@ var body: some View {
 
 
 struct TrophyView: View {
-    @ObservedObject var habbitVm: HabbitViewModel
+    @ObservedObject var habbitVm: HabitViewModel
     
     var body: some View {
         NavigationView {
@@ -34,8 +34,12 @@ struct TrophyView: View {
             ScrollView{
                 
                 VStack{
-                    Text("Your trophys !")
-                        .font(.title)
+                    Image("Habit-Loop")
+                        .resizable()
+                        .frame(width: 200, height: 100)
+                    
+                    Text("Your trophys collection!")
+                        .font(.title2)
                         .foregroundColor(.mint)
                     
                     HStack(spacing: 20) {

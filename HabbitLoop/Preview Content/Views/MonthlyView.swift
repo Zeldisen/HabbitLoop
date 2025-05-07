@@ -2,7 +2,7 @@ import SwiftUI
 
 struct MonthlyView: View {
     
-    @ObservedObject var habitVm: HabbitViewModel
+    @ObservedObject var habitVm: HabitViewModel
     @State private var currentMonth: Date = Date()
     @State private var selectedDate: Date?
   

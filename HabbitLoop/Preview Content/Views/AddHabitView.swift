@@ -10,7 +10,7 @@ import SwiftUI
 
 
 struct AddHabitView: View {
-    @ObservedObject var habbitVm: HabbitViewModel
+    @ObservedObject var habbitVm: HabitViewModel
     @ObservedObject var authVm: AuthViewModel
     
     @State var habbit: String = ""
@@ -28,7 +28,7 @@ struct AddHabitView: View {
  
     var body: some View {
         VStack{
-            Image("HabbitLoop-loggo")
+            Image("Habit-Loop")
                 .resizable()
                 .frame(width: 200, height: 100)
             Text("Welcome \(authVm.userName)!" )

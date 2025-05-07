@@ -15,15 +15,17 @@
 	<key>STORAGE_BUCKET</key>
 	<string>habbitloop.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
-	<false></false>
+	<false/>
 	<key>IS_ANALYTICS_ENABLED</key>
-	<false></false>
+	<false/>
 	<key>IS_APPINVITE_ENABLED</key>
-	<true></true>
+	<true/>
 	<key>IS_GCM_ENABLED</key>
-	<true></true>
+	<true/>
 	<key>IS_SIGNIN_ENABLED</key>
-	<true></true>
+	<true/>
+	<key>NSUserNotificationUsageDescription</key>
+	<string>Vi använder notiser för att påminna dig om dina habits.</string>
 	<key>GOOGLE_APP_ID</key>
 	<string>1:236600798273:ios:44fa43bea59553c78aeac0</string>
 </dict>

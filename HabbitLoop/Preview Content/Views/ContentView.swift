@@ -58,6 +58,14 @@ struct ContentView: View {
                 .padding()
                 
                 
+            }.onAppear {
+                UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+                    if let error = error {
+                        print("Notis-tillstånd misslyckades: \(error.localizedDescription)")
+                    } else {
+                        print("Notis-tillstånd beviljat: \(granted)")
+                    }
+                }
             }
             .padding()
             .background(Color.mint.opacity(0.5))

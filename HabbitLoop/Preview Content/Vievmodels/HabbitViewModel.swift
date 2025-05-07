@@ -8,6 +8,7 @@
 import Foundation
 import FirebaseFirestore
 import FirebaseAuth
+import UserNotifications
 
 class HabbitViewModel: ObservableObject {
     
@@ -19,34 +20,23 @@ class HabbitViewModel: ObservableObject {
      Function to get witch day it is for print to user in views
      */
     func habitsForToday() -> [Habit] {
-            let today = self.weekdayString(from: Date()) // t.ex. "Måndag"
-            return self.habits.filter { $0.scheduledDays.contains(today) }
-        }
-    
-    var doneDates: [Date] {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        
-        return habits.compactMap { habit in
-            if habit.done, let lastUpdated = habit.lastUpdated {
-                
-                return formatter.date(from: lastUpdated)
-            }
-            return nil
-        }
+        let today = self.weekdayString(from: Date()) // t.ex. "Måndag"
+        return self.habits.filter { $0.scheduledDays.contains(today) }
     }
-    
-    
-    func addHabbit(title: String,scheduledDays: [String]) {
+ /**
+  check userId and add habit to user whit userid
+  */
+    func addHabbit(title: String,scheduledDays: [String], notify: Bool = false, reminderTime: String? = nil) {
         guard let userId = Auth.auth().currentUser?.uid else {return}
         let newHabit = Habit(
             id: nil,
             title: title,
-            done: false,
             userId: userId,
             days: 0,
             lastUpdated: nil,
-            scheduledDays: scheduledDays
+            scheduledDays: scheduledDays,
+            notify: notify,
+            reminderTime: reminderTime
         )
         do {
             try db.collection("habits").addDocument(from: newHabit)
@@ -61,18 +51,48 @@ class HabbitViewModel: ObservableObject {
         formatter.dateFormat = "EEEE"
         return formatter.string(from: date).capitalized // Ex: "Måndag"
     }
+
+    // Function to get days in one month, uses in MonthlyView
+    func getDaysInMonth(for date: Date) -> [Date] {
+        let calendar = Calendar.current
+        let range = calendar.range(of: .day, in: .month, for: date)!
+        let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: date))!
+        
+        return range.compactMap { day -> Date? in
+            calendar.date(byAdding: .day, value: day - 1, to: startOfMonth)
+        }
+    }
     
     /**
-     Function that deletets one habit from a weekday, not deletes from all weekdays, but if you have a habbit in sundays and look in monthlyView you can see that it removes from all sundays, but not in other weedays.
+     Function to check and helps to ckeck weekdays when its done or not, else it will be done for all days/habit, works together with isHabitDone and toggleDone.
      */
-    func deleteHabit(_ habit: Habit) {
-        guard let habitId = habit.id else { return }
-        
+    func dateForWeekdayName(_ weekday: String) -> Date {
+        let calendar = Calendar.current
+        let weekdays = ["Söndag", "Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag"]
+        guard let weekdayIndex = weekdays.firstIndex(of: weekday) else { return Date() }
+
+        let today = Date()
+        let todayWeekday = calendar.component(.weekday, from: today) - 1 // 0 = Söndag
+        let delta = weekdayIndex - todayWeekday
+        return calendar.date(byAdding: .day, value: delta, to: today) ?? today
+    }
+    
+    // Mark if a day have a habit
+    func isHabitDone(for date: Date, habit: Habit) -> Bool {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let targetDate = formatter.string(from: date)
+        return habit.doneDates?.contains(targetDate) ?? false
+    }
+    /**
+     Function uses in deleteHabit(_habit:HAbit, day: String) in use of delete a habits from all weeldays
+     */
+    private func deleteHabitById(_ habitId: String) { //behåll
         db.collection("habits").document(habitId).delete { error in
             if let error = error {
-                print("Failed to remove habit: \(error.localizedDescription)")
+                print("Failed to delete habit: \(error.localizedDescription)")
             } else {
-                print("Habit removed")
+                print("Habit deleted")
             }
         }
     }
@@ -80,7 +100,7 @@ class HabbitViewModel: ObservableObject {
      Function removes all habits from list in all weekdays, not all habits, but that specific habit.
      Gives User a choise to remove all or just from that day.
      */
-    func deleteHabit(_ habit: Habit, day: String) {
+    func deleteHabit(_ habit: Habit, day: String) { // behåll
         guard let habitId = habit.id else { return }
         
         // If habit is Scheduled one day, remove habit
@@ -102,60 +122,25 @@ class HabbitViewModel: ObservableObject {
             }
         }
     }
-    
-    private func deleteHabitById(_ habitId: String) {
+    /**
+     Function that deletets one habit from a weekday, not deletes from all weekdays, but if you have a habbit in sundays and look in monthlyView you can see that it removes from all sundays, but not in other weedays.
+     */
+    func deleteHabit(_ habit: Habit) {  // behåll
+        guard let habitId = habit.id else { return }
+        
         db.collection("habits").document(habitId).delete { error in
             if let error = error {
-                print("Failed to delete habit: \(error.localizedDescription)")
+                print("Failed to remove habit: \(error.localizedDescription)")
             } else {
-                print("Habit deleted")
+                print("Habit removed")
             }
         }
-    }
-    
-    func getDaysInMonth(for date: Date) -> [Date] {
-        let calendar = Calendar.current
-        let range = calendar.range(of: .day, in: .month, for: date)!
-        let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: date))!
-        
-        return range.compactMap { day -> Date? in
-            calendar.date(byAdding: .day, value: day - 1, to: startOfMonth)
-        }
-    }
-    
-    // Mark if a day have a habit
-    func isHabitDone(for date: Date, habit: Habit) -> Bool {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        let targetDate = formatter.string(from: date)
-        return habit.doneDates?.contains(targetDate) ?? false
-    }
-    
-    
-    
-    func deleteHabit(at offsets: IndexSet) {
-        
-        
-        for index in offsets {
-            let habit = habits[index]
-            guard let habitId = habit.id else { continue }
-            
-            db.collection("habits").document(habitId).delete { error in
-                if let error = error {
-                    print(" Kunde inte ta bort habit: \(error.localizedDescription)")
-                } else {
-                    print(" Habit borttagen")
-                }
-            }
-        }
-        
-        
     }
     
     func fetchHabits () {
         guard let userId = Auth.auth().currentUser?.uid else {
-            print(" Ingen userId ännu")
-            print("User ID saknas, väntar 1 sekund...")
+            print(" No userId yet")
+            print("User ID missed, waiting 1 second...")
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 self.fetchHabits()
             }
@@ -166,7 +151,7 @@ class HabbitViewModel: ObservableObject {
             .whereField("userId", isEqualTo: userId)
             .addSnapshotListener { snapshot, error in
                 guard let documents = snapshot?.documents else {
-                    print(" Inga dokument hittade")
+                    print(" No documents found")
                     return }
                 self.habits = documents.compactMap { try? $0.data(as: Habit.self) }
                 
@@ -181,10 +166,12 @@ class HabbitViewModel: ObservableObject {
         let todayString = formatter.string(from: now)
         
         guard let habitId = habit.id else {
-            print("Habit saknar ID")
+            print("Habit misses ID")
             return
         }
-        if habit.done {
+        
+        if habit.doneDates?.contains(todayString) == true {
+        
             if habit.lastUpdated != todayString {
                 let newDay = habit.days + 1
                 
@@ -194,138 +181,121 @@ class HabbitViewModel: ObservableObject {
                     "done": false
                 ]) { error in
                     if let error = error {
-                        print("Misslyckades med att uppdatera dagar: \(error.localizedDescription)")
+                        print("Failed to update streak days: \(error.localizedDescription)")
                     } else {
-                        print("Uppdaterade streak: \(newDay) dagar")
+                        print("Updated streak: \(newDay) days")
                     }
                 }
             } else {
-                print("Redan räknat idag")
+                print("already counted today")
             }
         } else {
-            print("Habit är inte gjord ännu idag")
+            print("Habit is not done for today")
         }
     }
     
-    func toggleDone(for habit: Habit) {
+    func toggleDone(for habit: Habit, on date: Date) {
         guard let habitId = habit.id else { return }
-        
+
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
-        let today = formatter.string(from: Date())
-        
-        var updatedDates = habit.doneDates ?? []
-        
-        if updatedDates.contains(today) {
-            updatedDates.removeAll { $0 == today }
+        let dateString = formatter.string(from: date)
+
+        var updatedDates = habit.doneDates ?? [] 
+
+        if updatedDates.contains(dateString) {
+            updatedDates.removeAll { $0 == dateString }
         } else {
-            updatedDates.append(today)
+            updatedDates.append(dateString)
         }
-        
-        db.collection("habits").document(habitId).updateData([
+
+        db.collection("habits").document(habitId).updateData([  // update if habit is done on that day on firebase
             "doneDates": updatedDates
         ]) { error in
             if let error = error {
-                print("Kunde inte uppdatera done-datum: \(error.localizedDescription)")
+                print("Failed to update done-date: \(error.localizedDescription)")
             } else {
-                print("Done-datum uppdaterat")
+                print("Done-date uppdated for \(dateString)")
                 self.fetchHabits()
-                self.countStreakdays(for: habit)
-                
-                let newDoneStatus = !habit.done
-                self.db.collection("habits").document(habitId).updateData([
-                    "done": !habit.done
-                    
-                ]) { error in
-                    if let error = error {
-                        print("Kunde inte uppdatera done-status: \(error.localizedDescription)")
-                    } else {
-                        print("Done-status uppdaterad")
-                        
-                        if newDoneStatus == true {
-                            self.countStreakdays(for: habit)
-                        }
-                        
-                    }
-                }
             }
-            // Function to get days in one month
-            func getDaysInMonth(for date: Date) -> [Date] {
-                let calendar = Calendar.current
-                let range = calendar.range(of: .day, in: .month, for: date)!
-                let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: date))!
-                
-                return range.compactMap { day -> Date? in
-                    calendar.date(byAdding: .day, value: day - 1, to: startOfMonth)
-                }
-            }
-            
-            // Mark if a day have a habit
-            func isHabitDone(for date: Date) -> Bool {
-                return self.doneDates.contains { Calendar.current.isDate($0, inSameDayAs: date) }
-            }
-           
-            
+        }
+  
             func habitsGroupedByWeekday() -> [String: [Habit]] {
                 var groupedHabits: [String: [Habit]] = [:]
                 let formatter = DateFormatter()
                 formatter.dateFormat = "yyyy-MM-dd"
                 
-                let weekdayFormatter = DateFormatter()
-                weekdayFormatter.locale = Locale(identifier: "en_EN") // Weekdays in swedish
+                let weekdayFormatter = DateFormatter()   // get dates to weekdays
+                weekdayFormatter.locale = Locale(identifier: "sv_SV") // Weekdays in swedish
                 weekdayFormatter.dateFormat = "EEEE" // full weekdayprint
                 
                 for habit in self.habits {
                     if let lastUpdatedStr = habit.lastUpdated,
                        let date = formatter.date(from: lastUpdatedStr) {
                         
-                        let weekday = weekdayFormatter.string(from: date).capitalized // Måndag, Tisdag ...
-                        
+                        let weekday = weekdayFormatter.string(from: date).capitalized // Måndag, Tisdag fom dates
+                        // creates a dictonary of habits
                         if groupedHabits[weekday] == nil {
                             groupedHabits[weekday] = []
                         }
-                        groupedHabits[weekday]?.append(habit)
+                        groupedHabits[weekday]?.append(habit) // adds habit/habits
                     }
                 }
                 return groupedHabits
             }
-            
-            
-            
+      
         }
+    /**
+     Function for notifications. User can choose if they want a reminder or not. also choose time and day for reminder.
+     */
+    func scheduleNotification(title: String, time: Date, weekdays: [String]) {
+        let content = UNMutableNotificationContent()
+        content.title = "Remember to!"
+        content.body = title
+        content.sound = .default
+
+        let weekdayMap: [String: Int] = [  // List of days reminder can repeat if user has choosen them.
+            "Söndag": 1,
+            "Måndag": 2,
+            "Tisdag": 3,
+            "Onsdag": 4,
+            "Torsdag": 5,
+            "Fredag": 6,
+            "Lördag": 7
+        ]
         
+        let calendar = Calendar.current
+        let timeComponents = calendar.dateComponents([.hour, .minute], from: time)  // set time for reminder. hours and minutes
         
-        /*func countdays( for habit: Habit){
-         _ = Calendar.current
-         let now = Date()
-         let formatter = DateFormatter()
-         formatter.dateFormat = "yyyy-MM-dd"
-         let todayString = formatter.string(from: now)
-         
-         if habit.lastUpdated == todayString {
-         print("alreday updated today")
-         return
-         }
-         
-         let newDayCount = habit.days + 1
-         
-         guard let habitId = habit.id else {return}
-         
-         db.collection("habits").document(habitId).updateData([
-         "days" : newDayCount,
-         "lastUpdated" : todayString
-         ]) {error in
-         if error != nil {
-         print("Failed to update days")
-         }else {
-         print("updated days")
-         }
-         }
-         }
-         */
-        
+        for day in weekdays {
+            guard let weekdayNum = weekdayMap[day] else { continue }
+
+            var dateComponents = DateComponents()  // create day and time for reminder
+            dateComponents.weekday = weekdayNum
+            dateComponents.hour = timeComponents.hour
+            dateComponents.minute = timeComponents.minute
+
+            let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true) // create a trigger for day hour and minute, to repeat every week
+            let request = UNNotificationRequest(  // request of reminder
+                identifier: UUID().uuidString,  // gives reminder a id. in case user wants to delete
+                content: content,
+                trigger: trigger
+            )
+
+            UNUserNotificationCenter.current().add(request) { error in  //register notification and prints if something goas wrong.
+                if let error = error {
+                    print("Notify errer for \(day): \(error.localizedDescription)")
+                } else {
+                    print("Notify scheduled for \(day) kl. \(timeComponents.hour ?? 0):\(timeComponents.minute ?? 0)")
+                }
+            }
+        }
     }
-}
+    
+    
+     
+    }
+
     
     
 

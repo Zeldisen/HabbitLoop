@@ -6,13 +6,14 @@ struct DailyView: View {
     var body: some View {
         
        let todayHabits = habbitVm.habitsForToday()
-        let today = habbitVm.weekdayString(from: Date())
+       let today = Date()
+       let weekdayName = habbitVm.weekdayString(from: today)
                
         VStack {
             HStack {
                 Text("Daily goals for:")
                     .font(.title)
-                Text(today)
+                Text(weekdayName)
                     .font(.title)
                     .padding()
             }
@@ -24,8 +25,7 @@ struct DailyView: View {
                     ForEach(todayHabits) { habit in
                         HabitRow(
                             habit: habit,
-                            day: today,
-                            habitVm: habbitVm // skickas som let
+                            habitVm: habbitVm
                         )
                     }
                 }
@@ -41,27 +41,29 @@ struct DailyView: View {
 
 struct HabitRow: View {
     var habit: Habit
-    var day: String
     let habitVm: HabbitViewModel
-
+    
     var body: some View {
-        let isDoneToday = habitVm.isHabitDone(for: Date(), habit: habit)
-        
+    
+        let today = Date()
+        let isDone = habitVm.isHabitDone(for: today, habit: habit)
+
         HStack {
             Text(habit.title)
             Spacer()
             Text("streak: \(habit.days)")
             Spacer()
             Button(action: {
-                habitVm.toggleDone(for: habit)
+                habitVm.toggleDone(for: habit, on: today)
             }) {
-                Image(systemName: isDoneToday ? "checkmark.circle.fill" : "circle")
+                Image(systemName: isDone ? "checkmark.circle.fill" : "circle")
                     .foregroundColor(.mint)
             }
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button {
-                habitVm.deleteHabit(habit, day: day)
+                let todayString = habitVm.weekdayString(from: Date())
+                habitVm.deleteHabit(habit, day: todayString)
             } label: {
                 Label("Only This Day", systemImage: "calendar.badge.minus")
             }
@@ -81,4 +83,6 @@ struct HabitRow: View {
         .padding(.vertical, 4)
         .listRowBackground(Color.clear)
     }
+        
+   
 }

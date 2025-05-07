@@ -7,6 +7,7 @@
 
 import SwiftUI
 import FirebaseCore
+import UserNotifications
 
 class AppDelegate: NSObject, UIApplicationDelegate {
   func application(_ application: UIApplication,
@@ -14,6 +15,15 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     FirebaseApp.configure()
     return true
   }
+    func requestNotificationPermission() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            if let error = error {
+                print("Fel vid förfrågan om notis-tillstånd: \(error)")
+            } else {
+                print("Tillstånd beviljat? \(granted)")
+            }
+        }
+    }
 }
 
 @main

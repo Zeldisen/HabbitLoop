@@ -194,12 +194,16 @@ class HabitViewModel: ObservableObject {
             
             if newDay == 1 || newDay == 3 || newDay == 5{  // Day 1, 3, 5 user get a streak user get a bronze price
                     trophys.bronze += 1
+                trophyNotification(trophy: "🥉", message: "You got a new bronze trophy!")
             }else if [7, 10, 14, 18, 22, 26].contains(newDay) { // From day 7 -> 26 streak user get a silver price
                 trophys.silver += 1
+                trophyNotification(trophy: "🥈", message: "You got a new silver trophy!")
             } else if [30, 35, 40, 45, 50, 60, 70, 80, 90].contains(newDay) {  // From day 30 -> 90 user get a gold price
                 trophys.gold += 1
+                trophyNotification(trophy: "🥇", message: "You got a new golden trophy!")
             } else if newDay % 100 == 0 {  // Evry 100day user get a cup price / extra ordinary
                 trophys.cup += 1
+                trophyNotification(trophy: "🏆", message: "You got a rare golden cup trophy!")
             }
             saveTrophiesToFirestore()
             
@@ -305,6 +309,21 @@ class HabitViewModel: ObservableObject {
         db.collection("trophies").document(userId).getDocument { snapshot, error in
             if let data = snapshot, let stats = try? data.data(as: Trophys.self) {
                 self.trophys = stats
+            }
+        }
+    }
+    func trophyNotification(trophy: String, message: String) {
+        let content = UNMutableNotificationContent()
+        content.title = "New trophy!: \(trophy)"
+        content.body = message
+        content.sound = .default
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Notisfail: \(error.localizedDescription)")
             }
         }
     }

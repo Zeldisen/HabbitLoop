@@ -13,8 +13,14 @@ import UserNotifications
 class HabbitViewModel: ObservableObject {
     
     @Published var habits: [Habit] = []
+    @Published var trophys = Trophys()
     
     let db = Firestore.firestore()
+    
+    init() {
+        fetchHabits()
+        loadTrophiesFromFirestore()
+    }
     
     /**
      Function to get witch day it is for print to user in views
@@ -159,7 +165,8 @@ class HabbitViewModel: ObservableObject {
     }
     
     func countStreakdays(for habit: Habit){
-        _ = Calendar.current
+        
+        let calendar = Calendar.current
         let now = Date()
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -170,28 +177,52 @@ class HabbitViewModel: ObservableObject {
             return
         }
         
-        if habit.doneDates?.contains(todayString) == true {
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: now)!
+        let yesterdayString = formatter.string(from: yesterday)
         
-            if habit.lastUpdated != todayString {
-                let newDay = habit.days + 1
-                
-                db.collection("habits").document(habitId).updateData([
-                    "days": newDay,
-                    "lastUpdated": todayString,
-                    "done": false
-                ]) { error in
-                    if let error = error {
-                        print("Failed to update streak days: \(error.localizedDescription)")
-                    } else {
-                        print("Updated streak: \(newDay) days")
-                    }
-                }
-            } else {
-                print("already counted today")
+        let doneDates = habit.doneDates ?? []
+        
+        let isDoneToday = doneDates.contains(todayString)
+        let wasDoneYesterday = doneDates.contains(yesterdayString)
+        
+        if isDoneToday && habit.lastUpdated != todayString {
+                let newDay = wasDoneYesterday ? habit.days + 1 : 1
+            
+            if newDay == 1 || newDay == 3 || newDay == 5{  // Day 1, 3, 5 user get a streak user get a bronze price
+                    trophys.bronze += 1
+            }else if [7, 10, 14, 18, 22, 26].contains(newDay) { // From day 7 -> 26 streak user get a silver price
+                trophys.silver += 1
+            } else if [30, 35, 40, 45, 50, 60, 70, 80, 90].contains(newDay) {  // From day 30 -> 90 user get a gold price
+                trophys.gold += 1
+            } else if newDay % 100 == 0 {  // Evry 100day user get a cup price / extra ordinary
+                trophys.cup += 1
             }
-        } else {
-            print("Habit is not done for today")
-        }
+            saveTrophiesToFirestore()
+            
+            db.collection("habits").document(habitId).updateData([
+                      "days": newDay,
+                      "lastUpdated": todayString
+                  ]) { error in
+                      if let error = error {
+                          print("Kunde inte uppdatera streak: \(error.localizedDescription)")
+                      } else {
+                          print("Uppdaterade streak: \(newDay) dagar")
+                      }
+                  }
+
+              } else if !wasDoneYesterday && habit.days > 0 {
+                  //  Missed donecheck -> reset streak, means that user streak reset to zero for that habit. Keeps trophys
+                  db.collection("habits").document(habitId).updateData([
+                      "days": 0,
+                      "lastUpdated": todayString
+                  ]) { error in
+                      if let error = error {
+                          print("Kunde inte nollställa streak: \(error.localizedDescription)")
+                      } else {
+                          print("Streak nollställd!")
+                      }
+                  }
+              }
     }
     
     func toggleDone(for habit: Habit, on date: Date) {
@@ -245,6 +276,34 @@ class HabbitViewModel: ObservableObject {
             }
       
         }
+    func isAnyHabitDone(on date: Date) -> Bool {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let dateString = formatter.string(from: date)
+        
+        return habits.contains { habit in
+            habit.doneDates?.contains(dateString) ?? false
+        }
+    }
+    func saveTrophiesToFirestore() {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+
+        do {
+            try db.collection("trophies").document(userId).setData(from: trophys)
+        } catch {
+            print("Kunde inte spara troféer: \(error)")
+        }
+    }
+
+    func loadTrophiesFromFirestore() {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+
+        db.collection("trophies").document(userId).getDocument { snapshot, error in
+            if let data = snapshot, let stats = try? data.data(as: Trophys.self) {
+                self.trophys = stats
+            }
+        }
+    }
     /**
      Function for notifications. User can choose if they want a reminder or not. also choose time and day for reminder.
      */

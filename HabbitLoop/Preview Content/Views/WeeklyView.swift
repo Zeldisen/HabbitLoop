@@ -46,7 +46,9 @@ struct WeeklyHabitRow: View {
         HStack {
             Text("• \(habit.title)")
             Spacer()
-            Text("⭐️\(habit.days)")
+            if isDone {
+                Text(" ⭐️ : \(habit.days) days")
+            }
             Button(action: {
                 habbitVm.toggleDone(for: habit, on: dateForThisDay)
             }) {

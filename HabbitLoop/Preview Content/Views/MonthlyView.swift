@@ -5,7 +5,7 @@ struct MonthlyView: View {
     @ObservedObject var habitVm: HabbitViewModel
     @State private var currentMonth: Date = Date()
     @State private var selectedDate: Date?
-
+  
     var body: some View {
         VStack {
             // Shows Month and give user possibility to switch month
@@ -45,11 +45,17 @@ struct MonthlyView: View {
                             Text("\(Calendar.current.component(.day, from: day))")
                                 .frame(width: 30, height: 30)
                                 .clipShape(Circle())
-                  
-                            if hasScheduledHabit(on: day) {
-                                Circle()
-                                    .fill(Color.mint)
-                                    .frame(width: 6, height: 6)
+                       
+                            if hasScheduledHabit(on: day)  {
+                                HStack{ Circle()
+                                        .fill(Color.mint)
+                                        .frame(width: 6, height: 6)
+                                    if  habitVm.isAnyHabitDone(on: day){
+                                        Text("⭐️")
+                                            .frame(width: 15, height: 6)
+                                    }
+                                }
+                                
                             } else {
                                 Spacer().frame(height: 6)
                             }
@@ -80,6 +86,9 @@ struct MonthlyView: View {
                                 HStack {
                                     Text(habit.title)
                                     Spacer()
+                                    if  isDone {
+                                        Text(" ⭐️ : \(habit.days) days")
+                                    }
                                     Button(action: {
                                         habitVm.toggleDone(for: habit, on: selectedDate)
                                     }) {

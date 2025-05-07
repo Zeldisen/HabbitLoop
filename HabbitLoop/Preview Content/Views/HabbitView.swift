@@ -16,14 +16,13 @@ struct HabbitView: View {
     @State var habbit: String = ""
     @State var selectedDays: [String] = []
     
-   // let allDays = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"]
-    
     enum ViewMode {
         case daily, weekly, monthly
     }
     
     @State private var currentView: ViewMode = .daily
     @State private var showAddHabit = false
+    @State private var showTrophies = false
     
     var body: some View {
         
@@ -34,15 +33,23 @@ struct HabbitView: View {
               Text("Welcome \(authVm.userName)!")
                   .font(.title)
                   .padding(.bottom)
-              
-              Button("Add Habit") {
-                  showAddHabit = true
-              }
-              .bold()
-              .foregroundColor(.mint)
-              Spacer()
+            HStack{
+                Button("🏆"){
+                    showTrophies = true
+                }
+                .padding(.horizontal)
+                Button("Add Habit") {
+                    showAddHabit = true
+                }
+                .bold()
+                .foregroundColor(.mint)
+            }
+             
               .sheet(isPresented: $showAddHabit) {
                   AddHabitView(habbitVm: habbitVm, authVm: authVm)
+              }
+              .sheet(isPresented: $showTrophies){
+                  TrophyView(habbitVm: habbitVm)
               }
 
           

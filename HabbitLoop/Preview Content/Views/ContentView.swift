@@ -58,7 +58,7 @@ struct ContentView: View {
                 .padding()
                 
                 
-            }.onAppear {
+            }.onAppear { // when new user create a account they have give persmission if they want notification or not
                 UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
                     if let error = error {
                         print("Notis-tillstånd misslyckades: \(error.localizedDescription)")

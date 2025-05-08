@@ -39,7 +39,7 @@ struct HabitView: View {
             HStack{
                 Button {
                     showDeleteAlert = true
-                } label: { Label("", systemImage: "trash.fill")
+                } label: { Label("", systemImage: "trash")
                 }
                     .font(.title)
                     .foregroundColor(.mint)
@@ -64,7 +64,7 @@ struct HabitView: View {
                 Button {
                     showTrophies = true
                 } label: {
-                    Label("", systemImage: "trophy.fill")
+                    Label("", systemImage: "trophy")
                 }
                 .font(.title)
                 .foregroundColor(.mint)
@@ -73,7 +73,7 @@ struct HabitView: View {
                 Button {
                     showAddHabit = true
                 } label: {
-                    Label("", systemImage: "plus.circle.fill")
+                    Label("", systemImage: "plus.circle")
                 }
                 .font(.title)
                 .foregroundColor(.mint)

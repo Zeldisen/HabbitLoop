@@ -21,18 +21,17 @@ class HabitViewModel: ObservableObject {
     init() {
         fetchHabits()
         loadTrophiesFromFirestore()
-        
     }
     
     /**
-     Function to get witch day it is for print to user in views
+     Function to get witch day it is for print to user in dailyView
      */
     func habitsForToday() -> [Habit] {
         let today = self.weekdayString(from: Date()) // t.ex. "Måndag"
         return self.habits.filter { $0.scheduledDays.contains(today) }
     }
  /**
-  check userId and add habit to user whit userid
+  check userId and add habit to user whit userid in addHabitView
   */
     func addHabbit(title: String,scheduledDays: [String], notify: Bool = false, reminderTime: String? = nil) {
         guard let userId = Auth.auth().currentUser?.uid else {return}
@@ -52,7 +51,7 @@ class HabitViewModel: ObservableObject {
             print("Error saving to Firestore: \(error)")
         }
     }
-    
+    // uses in dailyView and MonthlyView
     func weekdayString(from date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "sv_SE")
@@ -91,6 +90,7 @@ class HabitViewModel: ObservableObject {
         formatter.dateFormat = "yyyy-MM-dd"
         let targetDate = formatter.string(from: date)
         return habit.doneDates?.contains(targetDate) ?? false
+        
     }
     /**
      Function uses in deleteHabit(_habit:HAbit, day: String) in use of delete a habits from all weeldays
@@ -144,10 +144,9 @@ class HabitViewModel: ObservableObject {
             }
         }
     }
-    
+
     func fetchHabits () {
-  
-   guard let userId = Auth.auth().currentUser?.uid else {
+       guard let userId = Auth.auth().currentUser?.uid else {
         
         print(" No userId yet")
             print("User ID missed, waiting 1 second...")
@@ -167,7 +166,10 @@ class HabitViewModel: ObservableObject {
                 
             }
     }
-    
+    /**
+     Counting streak days and adds one day to a habit if its done in todays date. also if user did not do donecheck on a day it will be resett to zero, user looses streak.
+     this function also checks and adds trophys for trophys collection. but this will be the same even if a streak resetts, user can not lose trophys. This beause incurrage user to continue to be better at habits.
+     */
     func countStreakdays(for habit: Habit){
         
         let calendar = Calendar.current
@@ -178,6 +180,11 @@ class HabitViewModel: ObservableObject {
         
         guard let habitId = habit.id else {
             print("Habit misses ID")
+            return
+        }
+        
+        if habit.lastUpdated == todayString {
+            print(" Already updated streak today, skipping.")
             return
         }
         
@@ -232,7 +239,9 @@ class HabitViewModel: ObservableObject {
                   }
               }
     }
-    
+    /**
+     Check if done and updates doneDates and calls on countStreakDays
+     */
     func toggleDone(for habit: Habit, on date: Date) {
         guard let habitId = habit.id else { return }
 
@@ -240,50 +249,47 @@ class HabitViewModel: ObservableObject {
         formatter.dateFormat = "yyyy-MM-dd"
         let dateString = formatter.string(from: date)
 
-        var updatedDates = habit.doneDates ?? [] 
+        var updatedDates = habit.doneDates ?? []
 
-        if updatedDates.contains(dateString) {
-            updatedDates.removeAll { $0 == dateString }
-        } else {
+        let isMarkingDone = !updatedDates.contains(dateString)
+
+        if isMarkingDone {
             updatedDates.append(dateString)
+        } else {
+            updatedDates.removeAll { $0 == dateString }
         }
 
-        db.collection("habits").document(habitId).updateData([  // update if habit is done on that day on firebase
+        // UpdateFirestore with new doneDates
+        db.collection("habits").document(habitId).updateData([
             "doneDates": updatedDates
         ]) { error in
             if let error = error {
                 print("Failed to update done-date: \(error.localizedDescription)")
             } else {
-                print("Done-date uppdated for \(dateString)")
-                self.fetchHabits()
-            }
-        }
-  
-            func habitsGroupedByWeekday() -> [String: [Habit]] {
-                var groupedHabits: [String: [Habit]] = [:]
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM-dd"
-                
-                let weekdayFormatter = DateFormatter()   // get dates to weekdays
-                weekdayFormatter.locale = Locale(identifier: "sv_SV") // Weekdays in swedish
-                weekdayFormatter.dateFormat = "EEEE" // full weekdayprint
-                
-                for habit in self.habits {
-                    if let lastUpdatedStr = habit.lastUpdated,
-                       let date = formatter.date(from: lastUpdatedStr) {
-                        
-                        let weekday = weekdayFormatter.string(from: date).capitalized // Måndag, Tisdag fom dates
-                        // creates a dictonary of habits
-                        if groupedHabits[weekday] == nil {
-                            groupedHabits[weekday] = []
-                        }
-                        groupedHabits[weekday]?.append(habit) // adds habit/habits
-                    }
+                print("Done-date updated for \(dateString)")
+
+                // Update local model directly , UI mirror directly
+                if let index = self.habits.firstIndex(where: { $0.id == habitId }) {
+                    self.habits[index].doneDates = updatedDates
                 }
-                return groupedHabits
+                // count streak only if done mark is on todays date.
+                let todayString = formatter.string(from: Date())
+                if isMarkingDone && dateString == todayString {
+                    var updatedHabit = habit
+                    updatedHabit.doneDates = updatedDates
+
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        self.countStreakdays(for: updatedHabit)
+                    }
+                
+                    
+                }
             }
-      
         }
+        }
+    /**
+      checks if any habit is done on that day an put a star in calenderview to show user that there is one or more habits don on that day
+     */
     func isAnyHabitDone(on date: Date) -> Bool {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -293,16 +299,18 @@ class HabitViewModel: ObservableObject {
             habit.doneDates?.contains(dateString) ?? false
         }
     }
+    // saves thropies to firestore
     func saveTrophiesToFirestore() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
 
         do {
             try db.collection("trophies").document(userId).setData(from: trophys)
+            print("user trophys saved")
         } catch {
-            print("Kunde inte spara troféer: \(error)")
+            print("Failed to save trophies: \(error)")
         }
     }
-
+    // Loading trophies from firestore
     func loadTrophiesFromFirestore() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
 
@@ -312,6 +320,8 @@ class HabitViewModel: ObservableObject {
             }
         }
     }
+    // Notification on trophies, if user got one while app is not running but running in background, not sure if it really work
+    // have not hade the chance to test it yet, and user get a trophy right away when done check is done.
     func trophyNotification(trophy: String, message: String) {
         let content = UNMutableNotificationContent()
         content.title = "New trophy!: \(trophy)"
@@ -328,7 +338,7 @@ class HabitViewModel: ObservableObject {
         }
     }
     /**
-     Function for notifications. User can choose if they want a reminder or not. also choose time and day for reminder.
+     Function for notifications. User can choose if they want a reminder or not. also choose time and day for reminder. Works if app running in background.
      */
     func scheduleNotification(title: String, time: Date, weekdays: [String]) {
         let content = UNMutableNotificationContent()

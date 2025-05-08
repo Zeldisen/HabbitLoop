@@ -54,13 +54,13 @@ struct TrophyView: View {
                                           let streak = habit.days
                         let trophy: String = {
                             switch streak {
-                            case 14...:
+                            case 100...:
                                 return "🏆"
-                            case 7...:
+                            case 30...90:
                                 return "🥇"
-                            case 3..<7:
+                            case 7..<26:
                                 return "🥈"
-                            case 1..<3:
+                            case 1..<5:
                                 return "🥉"
                             default:
                                 return ""
@@ -93,9 +93,9 @@ struct TrophyView: View {
                                         }
                                         .padding()
                                     }
-                                    //.navigationTitle("Treats")
-                                    //.navigationBarTitleDisplayMode(.inline)
-                }
+                                 
+    }
+        
             }
         
     

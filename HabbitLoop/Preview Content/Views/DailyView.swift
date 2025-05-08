@@ -11,8 +11,7 @@ struct DailyView: View {
                
         VStack {
             HStack {
-               // Text("Goals for:")
-              //      .font(.title2)
+              
                 Text(weekdayName)
                     .font(.title2)
                     .padding()

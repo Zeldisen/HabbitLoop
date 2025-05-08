@@ -13,7 +13,7 @@ struct AddHabitView: View {
     @ObservedObject var habbitVm: HabitViewModel
     @ObservedObject var authVm: AuthViewModel
     
-    @State var habbit: String = ""
+    @State var habit: String = ""
     @State var selectedDays: [String] = []
     @State private var notify = false    // for reminder
     @State private var reminderTime = Date() // for reminder
@@ -24,6 +24,7 @@ struct AddHabitView: View {
         formatter.dateFormat = "HH:mm"
         return formatter
     }
+    
     let allDays = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"]
  
     var body: some View {
@@ -36,7 +37,7 @@ struct AddHabitView: View {
                 .padding(.bottom)
             
             Form {
-                TextField("Habit-titel", text: $habbit)
+                TextField("Habit-titel", text: $habit)
                 
                 Toggle("Reminde me ", isOn: $notify)
                 
@@ -71,23 +72,23 @@ struct AddHabitView: View {
         }
         VStack{
            
-            TextField("Your Habbit", text: $habbit)
+            TextField("Your Habbit", text: $habit)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding(.horizontal)
             
             Button("Save"){
                 let formattedTime = timeFormatter.string(from: reminderTime)
                    habbitVm.addHabbit(
-                       title: habbit,
+                       title: habit,
                        scheduledDays: selectedDays,
                        notify: notify,
                        reminderTime: notify ? formattedTime : nil
                    )
                 if notify {
-                    habbitVm.scheduleNotification(title: habbit, time: reminderTime, weekdays: selectedDays)
+                    habbitVm.scheduleNotification(title: habit, time: reminderTime, weekdays: selectedDays)
                    }
               
-                habbit = ""
+                habit = ""
                 selectedDays = []
             }
             .foregroundColor(.mint)

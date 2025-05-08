@@ -11,8 +11,8 @@ import FirebaseAuth
 
 class AuthViewModel: ObservableObject {
    
-    @Published var isLoggedIn = false
-    @Published var userName: String = ""
+    @Published var isLoggedIn = false     // to check witch view shall show, and if user is deleting account.
+    @Published var userName: String = ""  // just to print username for welcome user, There for it i not in a model.
     
     func login(email: String, password: String) {
         Auth.auth().signIn(withEmail: email, password: password ){
@@ -25,7 +25,7 @@ class AuthViewModel: ObservableObject {
             }
         }
     }
-   
+   // used when user delete account to sign out and user have no longer access, unless user creates a new account, can also be in use if a sign out button adds to a view.
     func signOut() {
         do {
             try Auth.auth().signOut()
@@ -37,6 +37,7 @@ class AuthViewModel: ObservableObject {
         }
     }
     
+    // get userData
     func fetchUserData() {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         let db = Firestore.firestore()
@@ -49,14 +50,14 @@ class AuthViewModel: ObservableObject {
             }
         }
     }
-    
+    // user don´t have any account yet, user needs to be created at auth and firestore, in order to have access of habit loops functions.
     func createUser(userName: String, email: String, password: String ){
         Auth.auth().createUser(withEmail: email, password: password){ result, error in
             if let result = result {
                 let uid = result.user.uid
                 let db = Firestore.firestore()
                 
-                // Spara användarens namn i Firestore
+                // Save user name and email in Firestore
                 db.collection("users").document(uid).setData([
                     "userName": userName,
                     "email": email
@@ -65,7 +66,7 @@ class AuthViewModel: ObservableObject {
                         print("Error saving user data: \(error)")
                     } else {
                         DispatchQueue.main.async {
-                            self.isLoggedIn = true
+                            self.isLoggedIn = true  // when user is loggedin dailyview shows
                         }
                     }
                 }
@@ -74,9 +75,13 @@ class AuthViewModel: ObservableObject {
             }
         }
     }
+    /**
+     When function calls it starts to remove data, when it´s done, then completion calls thanks of escapimg to finish work, escaping is used to call completion beacause deleteAccount has already returned and is no longer in scope.
+     Funtion removes users data, like habits and more, then it delete user account, and send sucess or error if something goes wrong.
+     */
     func deleteAccount(completion: @escaping (Result<Void, Error>) -> Void){
         guard let user = Auth.auth().currentUser else {
-               completion(.failure(NSError(domain: "Ingen användare inloggad", code: 0)))
+               completion(.failure(NSError(domain: "No user is inlogged", code: 0)))
                return
            }
         

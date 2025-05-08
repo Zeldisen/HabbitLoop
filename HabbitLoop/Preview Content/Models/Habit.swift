@@ -20,17 +20,6 @@ struct Habit: Identifiable , Codable {
        var notify: Bool?      
        var reminderTime: String?
     
-   /* init(title: String, scheduledDays: String, notify: Bool, reminderTime: String?) {
-           self.title = title
-          // self.userId = userId
-           //self.days = days
-          // self.lastUpdated = lastUpdated
-           self.scheduledDays = [scheduledDays]
-         //  self.doneDates = [doneDates]
-         //  self.notify = notify
-         // self.reminderTime = reminderTime
-       }*/
-
 }
 
 

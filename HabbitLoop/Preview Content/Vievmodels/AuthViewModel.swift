@@ -85,7 +85,7 @@ class AuthViewModel: ObservableObject {
     }
     func updateUserName(to newUserName: String, completion: @escaping (Result<Void, Error>) -> Void) {
         guard let uid = Auth.auth().currentUser?.uid else {
-            completion(.failure(NSError(domain: "Ingen användare är inloggad", code: 0)))
+            completion(.failure(NSError(domain: "No user is inlogged", code: 0)))
             return
         }
 

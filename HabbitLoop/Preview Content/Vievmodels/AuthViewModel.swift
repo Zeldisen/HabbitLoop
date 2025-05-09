@@ -25,6 +25,14 @@ class AuthViewModel: ObservableObject {
             }
         }
     }
+    func StayLoggedIn() {
+        if Auth.auth().currentUser != nil {
+            self.isLoggedIn = true
+            self.fetchUserData()
+        } else {
+            self.isLoggedIn = false
+        }
+    }
    // used when user delete account to sign out and user have no longer access, unless user creates a new account, can also be in use if a sign out button adds to a view.
     func signOut() {
         do {
@@ -72,6 +80,26 @@ class AuthViewModel: ObservableObject {
                 }
             } else {
                 print("Auth error: \(error?.localizedDescription ?? "Unknown error")")
+            }
+        }
+    }
+    func updateUserName(to newUserName: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            completion(.failure(NSError(domain: "Ingen användare är inloggad", code: 0)))
+            return
+        }
+
+        let db = Firestore.firestore()
+        db.collection("users").document(uid).updateData([
+            "userName": newUserName
+        ]) { error in
+            if let error = error {
+                completion(.failure(error))
+            } else {
+                DispatchQueue.main.async {
+                    self.userName = newUserName
+                }
+                completion(.success(()))
             }
         }
     }

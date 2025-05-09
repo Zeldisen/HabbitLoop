@@ -23,6 +23,7 @@ struct HabitView: View {
     @State private var currentView: ViewMode = .daily
     @State private var showAddHabit = false
     @State private var showTrophies = false
+    @State private var showSettings = false
     
     @State private var showDeleteAlert = false
     @State private var deleteErrorMessage: String? = nil
@@ -30,41 +31,32 @@ struct HabitView: View {
     var body: some View {
         
         VStack {
-              Image("Habit-Loop")
-                  .resizable()
-                  .frame(width: 200, height: 100)
-              Text("Welcome \(authVm.userName)!")
-                  .font(.title)
-                  .padding(.bottom)
+            
+                Image("Habit-Loop")
+                    .resizable()
+                    .frame(width: 200, height: 100)
+                    .padding()
+               
+            
+                Text("Welcome \(authVm.userName)!")
+                    .font(.title)
+                    .padding(.bottom)
+              
+                  
+            
             HStack{
                 Button {
-                    showDeleteAlert = true
-                } label: { Label("", systemImage: "trash.fill")
+                    showSettings = true
+                } label: { Label("", systemImage: "gearshape")
                 }
                     .font(.title)
                     .foregroundColor(.mint)
                     .padding(.horizontal)
-                    .alert("Are you sure you want to delete your account?", isPresented: $showDeleteAlert) {
-                        Button("Delete", role: .destructive) {
-                            authVm.deleteAccount { result in
-                                switch result {
-                                case .success:
-                                    authVm.signOut()
-                                    print("Account deleted")
-                                    // user logs out
-                                case .failure(let error):
-                                    deleteErrorMessage = error.localizedDescription
-                                }
-                            }
-                        }
-                        Button("Abort", role: .cancel) { }
-                    } message: {
-                        Text("Can´t regret this. Al data will be lost.")
-                    }
+                  
                 Button {
                     showTrophies = true
                 } label: {
-                    Label("", systemImage: "trophy.fill")
+                    Label("", systemImage: "trophy")
                 }
                 .font(.title)
                 .foregroundColor(.mint)
@@ -73,7 +65,7 @@ struct HabitView: View {
                 Button {
                     showAddHabit = true
                 } label: {
-                    Label("", systemImage: "plus.circle.fill")
+                    Label("", systemImage: "plus.circle")
                 }
                 .font(.title)
                 .foregroundColor(.mint)
@@ -86,6 +78,9 @@ struct HabitView: View {
               }
               .sheet(isPresented: $showTrophies){
                   TrophyView(habbitVm: habbitVm)
+              }
+              .sheet(isPresented: $showSettings){
+                  SettingsView(authVm: authVm)
               }
 
           
